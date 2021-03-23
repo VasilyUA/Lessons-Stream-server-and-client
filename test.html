@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<title>Title</title>
+	</head>
+	<body>
+		<img id="selfie" src="" />
+	</body>
+	<script>
+		const saveData = (function () {
+			const a = document.createElement('a');
+			document.body.appendChild(a);
+			a.style = 'display: none';
+			return function (data, fileName) {
+				const url = window.URL.createObjectURL(data);
+				a.href = url;
+				a.download = fileName;
+				// a.click();
+				window.URL.revokeObjectURL(url);
+			};
+		})();
+
+		const domain = 'http://localhost:4000';
+		const url = `${domain}/file/820552fc-3163-4152-ab7b-bd297c074260.jpg`;
+
+		const patientPhoto = new Request(url, {
+			method: 'GET'
+		});
+
+		function readStream(stream) {
+			const reader = stream.getReader();
+			let result = [];
+			reader
+				.read()
+				.then(function processText({ done, value }) {
+					if (done) {
+						console.log('Stream complete');
+						saveData(new Blob(result, { type: 'text/html' }), 'test.jpg');
+						document.getElementById('selfie').src = URL.createObjectURL(new Blob(result));
+						return;
+					}
+					console.log(value);
+					result.push(value);
+					return reader.read().then(processText);
+				})
+				.catch((err) => console.log(err));
+		}
+
+		fetch(patientPhoto)
+			.then((response) => readStream(response.body))
+			.catch((err) => console.log(err));
+	</script>
+</html>
